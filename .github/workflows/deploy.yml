@@ -1,23 +1,28 @@
-name: Github Page Deploy Workflow
+name: automatic_deployment
 
 on:
   push:
-    branches: [main]
+    branches:
+      - master
+    # paths:
+    #   - "packages/container/**"
+
+# defaults:
+#   run:
+#     working-directory: packages/container
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: "12.x"
-      - run: npm ci
+      - run: npm install
       - run: npm run build
-      - name: Deploy
-        uses: crazy-max/ghaction-github-pages@v1
-        with:
-          target_branch: gh-pages
-          build_dir: build
+
+      - uses: shinyinc/action-aws-cli@v1.2
+      - run: aws s3 sync dist s3://${{ secrets.AWS_S3_BUCKET_NAME }}/container/latest
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ""
